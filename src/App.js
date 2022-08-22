@@ -1,6 +1,6 @@
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { createUserWithEmailAndPassword, getAuth, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, getAuth, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
 import app from './firebase.init';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
@@ -9,11 +9,16 @@ import { useState } from 'react';
 const auth = getAuth(app);
 
 function App() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [validated, setValidated] = useState(false);
   const [error, setError] = useState('');
   const [registered, setRegistered] = useState(false);
+
+  const handleNameBlur = event => {
+    setName(event.target.value);
+  }
 
   const handleEmailBlur = event => {
     setEmail(event.target.value);
@@ -42,7 +47,6 @@ function App() {
     setError('');
 
     if (registered) {
-      console.log(email, password)
       signInWithEmailAndPassword(auth, email, password)
         .then(result => {
           const user = result.user;
@@ -59,18 +63,30 @@ function App() {
       createUserWithEmailAndPassword(auth, email, password)
         .then(result => {
           const user = result.user;
-          console.log(user, email, password);
+          console.log(user);
           setEmail('');
           setPassword('');
           verifyEmail();
+          setUserName();
         })
         .catch(error => {
           console.error(error);
           setError(error.message);
         })
     }
-
     event.preventDefault();
+  }
+
+  const setUserName = () => {
+    updateProfile(auth.currentUser, {
+      displayName: name
+    })
+      .then(() => {
+        console.log('updating name');
+      })
+      .catch(error => {
+        console.error(error.message);
+      })
   }
 
   const verifyEmail = () => {
@@ -92,6 +108,15 @@ function App() {
       <div className="registration w-50 mx-auto mt-4">
         <h2 className='text-primary'>Please {registered ? 'Login' : 'Register'}!!</h2>
         <Form noValidate validated={validated} onSubmit={handleFormSubmit}>
+
+          {!registered && <Form.Group className="mb-3" controlId="floatingTextarea">
+            <Form.Label>Your Name</Form.Label>
+            <Form.Control onBlur={handleNameBlur} type="text" placeholder="Your Name" required />
+            <Form.Control.Feedback type="invalid">
+              Please choose a username.
+            </Form.Control.Feedback>
+          </Form.Group>}
+
           <Form.Group className="mb-3" controlId="formBasicEmail">
             <Form.Label>Email address</Form.Label>
             <Form.Control onBlur={handleEmailBlur} type="email" placeholder="Enter email" required />
